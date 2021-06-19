@@ -21,8 +21,10 @@
 
 cmake_minimum_required(VERSION 2.8.6)
 
-include(FindPkgConfig)
-include(GNUInstallDirs)
+if(NOT WIN32)
+	include(FindPkgConfig)
+	include(GNUInstallDirs)
+endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 
@@ -68,8 +70,10 @@ if(ENABLE_DECODE)
 	list(APPEND PKGDEPS "libsigrokdecode4DSL>=0.4.0")
 endif()
 
-find_package(PkgConfig)
-pkg_check_modules(PKGDEPS REQUIRED ${PKGDEPS})
+if(NOT WIN32)
+	find_package(PkgConfig)
+	pkg_check_modules(PKGDEPS REQUIRED ${PKGDEPS})
+endif()
 
 if(FORCE_QT4)
 	set(Qt5Core_FOUND FALSE)
@@ -90,13 +94,16 @@ else()
 	find_package(Qt4 REQUIRED)
 endif()
 
-find_package(Threads)
 
 find_package(PythonLibs 3 EXACT)
 find_package(Boost 1.42 COMPONENTS filesystem system thread REQUIRED)
-find_package(libusb-1.0 REQUIRED)
-find_package(libzip REQUIRED)
-find_package(FFTW REQUIRED)
+
+if(NOT WIN32)
+	find_package(libusb-1.0 REQUIRED)
+	find_package(Threads)
+	find_package(libzip REQUIRED)
+	find_package(FFTW REQUIRED)
+endif()
 
 #===============================================================================
 #= Config Header
@@ -320,7 +327,7 @@ if(WIN32)
 	# Use the DSView icon for the DSView.exe executable.
 	set(CMAKE_RC_COMPILE_OBJECT "${CMAKE_RC_COMPILER} -O coff -I${CMAKE_CURRENT_SOURCE_DIR} <SOURCE> <OBJECT>")
 	enable_language(RC)
-	list(APPEND DSView_SOURCES DSView.rc)
+#	list(APPEND DSView_SOURCES DSView.rc)
 endif()
 
 if(Qt5Core_FOUND)
@@ -339,7 +346,8 @@ endif()
 #-------------------------------------------------------------------------------
 
 add_definitions(${QT_DEFINITIONS})
-add_definitions(-std=c++11 -Wall -Wextra -Wno-return-type -Wno-ignored-qualifiers)
+#add_definitions(-std=c++11 -Wall -Wextra -Wno-return-type -Wno-ignored-qualifiers)
+add_definitions(-std=c++11)
 
 if(ENABLE_DECODE)
         add_definitions(-DENABLE_DECODE)
@@ -376,7 +384,6 @@ set(DSVIEW_LINK_LIBS
 	${Boost_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
 	${QT_LIBRARIES}
-        ${LIBUSB_1_LIBRARIES}
         ${FFTW_LIBRARIES}
 )
 
@@ -402,6 +409,13 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME} ${DSVIEW_LINK_LIBS})
+
+#===============================================================================
+if(WIN32)
+	include(CMake/fftw_on_windows.cmake)
+	include(CMake/libusb_on_windows.cmake)
+endif()
+#===============================================================================
 
 if(WIN32)
 # Pass -mwindows so that no "DOS box" will open when PulseView is started.
