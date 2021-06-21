@@ -401,14 +401,34 @@ endif()
 
 list(APPEND DSVIEW_LINK_LIBS ${PYTHON_LIBRARIES})
 
+
+#===============================================================================
+# This code sorts the project files as they appear in the root directory
+
+# Generate a list of all .c & .h files in the current directory and sub directores.
+file(
+     GLOB_RECURSE source_list RELATIVE
+     "${CMAKE_CURRENT_SOURCE_DIR}"
+     *.c *.h *.cpp
+    )
+foreach(source IN LISTS source_list)
+    get_filename_component(source_path "${source}" PATH)
+    string(REPLACE "/" "\\" source_path_msvc "${source_path}")
+    source_group("${source_path_msvc}" FILES "${source}")
+endforeach()  
+message(STATUS "Tree reorganized")
+#===============================================================================
+
 add_executable(${PROJECT_NAME}
 	${DSView_SOURCES}
 	${DSView_HEADERS_MOC}
 	${DSView_FORMS_HEADERS}
 	${DSView_RESOURCES_RCC}
+	${DSView_HEADERS}
 )
 
 target_link_libraries(${PROJECT_NAME} ${DSVIEW_LINK_LIBS})
+
 
 #===============================================================================
 if(WIN32)
